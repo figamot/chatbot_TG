@@ -1,13 +1,15 @@
 import os
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, JobQueue
 import requests
 import json
 import sys
 import logging
 from threading import Thread
 from flask import Flask, request
+from users import UserManager
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -24,6 +26,11 @@ load_dotenv()
 # Получаем токены из переменных окружения
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+
+# Инициализация UserManager
+user_manager = UserManager()
+
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 
 def get_mistral_response(message):
     url = "https://api.mistral.ai/v1/chat/completions"
@@ -57,6 +64,14 @@ def start(update: Update, context: CallbackContext):
     )
 
 def handle_message(update: Update, context: CallbackContext):
+    user = update.effective_user
+    user_manager.add_user(
+        user_id=user.id,
+        username=user.username,
+        first_name=user.first_name
+    )
+    user_manager.update_user_activity(user.id)
+    
     try:
         user_message = update.message.text
         logger.info(f"Получено сообщение от пользователя: {user_message}")
@@ -82,6 +97,28 @@ def handle_message(update: Update, context: CallbackContext):
 def error_handler(update: Update, context: CallbackContext):
     logger.error(f'Update "{update}" caused error "{context.error}"')
 
+async def stats(update: Update, context: CallbackContext):
+    """Показать статистику использования бота"""
+    if update.effective_user.id == ADMIN_ID:  # Добавьте ADMIN_ID в начало файла
+        stats_text = user_manager.get_user_stats()
+        await update.message.reply_text(stats_text)
+    else:
+        total_users = len(user_manager.get_all_users())
+        total_messages = sum(user['message_count'] for user in user_manager.users.values())
+        stats_text = f"📊 Статистика бота:\n\n"
+        stats_text += f"👥 Всего пользователей: {total_users}\n"
+        stats_text += f"💬 Всего сообщений: {total_messages}\n"
+        await update.message.reply_text(stats_text)
+
+async def send_daily_stats(context: CallbackContext):
+    """Отправка ежедневной статистики администратору"""
+    if ADMIN_ID:
+        stats_text = user_manager.get_user_stats()
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"📊 Ежедневная статистика:\n\n{stats_text}"
+        )
+
 def main():
     try:
         # Создаем Updater и передаем ему токен вашего бота
@@ -95,6 +132,7 @@ def main():
 
         # Регистрируем обработчики
         dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("stats", stats))
         dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
         
         # Добавляем обработчик ошибок
@@ -104,6 +142,16 @@ def main():
         logger.info("Бот запущен...")
         print("Бот запущен...")
         updater.start_polling(clean=True)
+
+        # Добавляем ежедневную отправку статистики
+        if ADMIN_ID:
+            job_queue = updater.job_queue
+            job_queue.run_daily(
+                send_daily_stats,
+                time=datetime.time(hour=20, minute=0),  # Время отправки (20:00)
+                days=(0, 1, 2, 3, 4, 5, 6)  # Все дни недели
+            )
+
         updater.idle()
 
     except Exception as e:

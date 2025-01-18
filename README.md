@@ -10,6 +10,9 @@ Telegram бот с интеграцией Mistral AI для генерации �
 - Обработка ошибок
 - Поддержка контекста диалога
 - Возможность настройки параметров генерации
+- Отслеживание активности пользователей
+- Статистика использования бота
+- Ежедневная отправка статистики администратору
 
 ## Локальная установка
 
@@ -31,6 +34,7 @@ pip install -r requirements.txt
 ```env
 TELEGRAM_TOKEN=ваш_telegram_token
 MISTRAL_API_KEY=ваш_mistral_api_key
+ADMIN_ID=ваш_telegram_id  # Ваш Telegram ID
 ```
 
 4. Запустите бота:
@@ -61,6 +65,7 @@ pip install -r requirements.txt
 ```bash
 echo "TELEGRAM_TOKEN=ваш_telegram_token" > .env
 echo "MISTRAL_API_KEY=ваш_mistral_api_key" >> .env
+echo "ADMIN_ID=ваш_telegram_id" >> .env  # Ваш Telegram ID
 ```
 
 5. Настройте Always-on задачу:
@@ -78,6 +83,7 @@ echo "MISTRAL_API_KEY=ваш_mistral_api_key" >> .env
 - Mistral AI API
 - python-dotenv
 - logging
+- Flask
 
 ## Безопасность
 
