@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, JobQueue
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext, JobQueue
 import requests
 import json
 import sys
@@ -133,7 +133,7 @@ def main():
         # Регистрируем обработчики
         dp.add_handler(CommandHandler("start", start))
         dp.add_handler(CommandHandler("stats", stats))
-        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+        dp.add_handler(MessageHandler(filters.text & ~filters.command, handle_message))
         
         # Добавляем обработчик ошибок
         dp.add_error_handler(error_handler)
