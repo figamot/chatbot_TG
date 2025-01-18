@@ -6,6 +6,10 @@ import requests
 import json
 import sys
 import logging
+from threading import Thread
+from flask import Flask, request
+
+app = Flask(__name__)
 
 # Настраиваем логирование
 logging.basicConfig(
@@ -107,5 +111,9 @@ def main():
         print(f"Критическая ошибка: {str(e)}")
         sys.exit(1)
 
+def run_flask():
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 if __name__ == "__main__":
+    Thread(target=run_flask).start()
     main() 

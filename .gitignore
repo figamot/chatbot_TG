@@ -1,16 +1,14 @@
-# Environments
-.env
-.venv
-env/
+# Виртуальное окружение
 venv/
-ENV/
+.venv/
+env/
+.env
 
-# Python
+# Кэш Python
 __pycache__/
 *.py[cod]
-*$py.class
 
-# Logs
+# Логи
 *.log
 
 # IDE
